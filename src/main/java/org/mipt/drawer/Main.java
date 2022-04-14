@@ -12,7 +12,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         InputStream is = GraphMLParser.class.getClassLoader().getResourceAsStream("digraph.xml");
-        int w = 2;
+        int w = 3;
         if (args.length > 0) {
             try {
                 is = new FileInputStream(args[0]);
@@ -27,7 +27,7 @@ public class Main {
         List<Vertex> vertexes = graphMLParser.getVertexes();
         DiGraphDrawer graphDrawer = new DiGraphDrawer(vertexes);
 
-        graphDrawer.drawGraphToFile("tree.png", w);
+        graphDrawer.drawGraphToFile("graph.png", w);
         String s = args.length > 0 ? args[0] : "";
         System.out.println("Done! " + s);
 
@@ -37,7 +37,7 @@ public class Main {
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ignored) {
             }
 
-            ImageIcon icon = new ImageIcon("tree.png");
+            ImageIcon icon = new ImageIcon("graph.png");
             JOptionPane.showMessageDialog(
                     null,
                     "Graph",

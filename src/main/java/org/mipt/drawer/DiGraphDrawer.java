@@ -4,7 +4,6 @@ import com.mxgraph.util.mxCellRenderer;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
 import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 
 import javax.imageio.ImageIO;
@@ -20,6 +19,8 @@ import java.util.stream.Collectors;
 public class DiGraphDrawer {
     private static final double WIDTH = 20.0;
     private static final double HEIGHT = 20.0;
+    private static final Map<Integer, Integer> layerToPosXOffset = new HashMap<>();
+    private static final Map<Integer, Integer> layerToNegXOffset = new HashMap<>();
 
     private static int offsetByX = 0;
     private final List<Vertex> rootVertexes;
@@ -28,26 +29,16 @@ public class DiGraphDrawer {
         this.rootVertexes = rootVertexes;
     }
 
-    private static Object fillTreeFromVertex(mxGraph tree, Vertex vertex, int offsetByY) {
-        List<Edge> edges = Util.listFromIterable(vertex.getEdges(Direction.OUT));
-        if (edges.size() > 0) {
-            Object leftSubTreeHead = fillTreeFromVertex(tree, edges.get(0).getVertex(Direction.IN), offsetByY + 1);
-            Object currentTreeHead = insertAndGetCurrentVertexToGraph(tree, vertex, offsetByY);
-            tree.insertEdge(tree.getDefaultParent(), null, null, currentTreeHead, leftSubTreeHead);
-            if (edges.size() > 1) {
-                Object rightSubTreeHead = fillTreeFromVertex(tree, edges.get(1).getVertex(Direction.IN), offsetByY + 1);
-                tree.insertEdge(tree.getDefaultParent(), null, null, currentTreeHead, rightSubTreeHead);
-            }
-            return currentTreeHead;
-        } else {
-            return insertAndGetCurrentVertexToGraph(tree, vertex, offsetByY);
-        }
-    }
-
     private static Object insertAndGetCurrentVertexToGraph(mxGraph graph, Vertex vertex, int offsetByY) {
         return graph.insertVertex(graph.getDefaultParent(),
                 null, vertex.getId(), 2 * WIDTH * (++offsetByX), 3 * HEIGHT * (offsetByY + 1),
                 WIDTH, HEIGHT, mxConstants.STYLE_IMAGE);
+    }
+
+    private static Object insertAndGetDummyVertexToGraph(mxGraph graph, int offsetByY, int offsetByX) {
+        return graph.insertVertex(graph.getDefaultParent(),
+                null, null, 2 * WIDTH * (offsetByX), 3 * HEIGHT * (offsetByY + 1),
+                WIDTH / 10, HEIGHT / 10, mxConstants.STYLE_IMAGE);
     }
 
     public void drawGraphToFile(String fileName, int w) {
@@ -71,7 +62,7 @@ public class DiGraphDrawer {
         Map<Vertex, Integer> vToLabel = new HashMap<>();
         Map<Vertex, Integer> vToLayer = new HashMap<>();
         Map<Vertex, Object> vToGraph = new HashMap<>();
-        vToLabel.put(vertexes.get((int)(Math.random() * vertexes.size())), ++label);
+        vToLabel.put(vertexes.get((int) (Math.random() * vertexes.size())), ++label);
 
         for (int i = 1; i < vertexes.size(); i++) {
             Vertex unlabeledV = getUnlabeledV(vertexes, vToLabel);
@@ -106,9 +97,29 @@ public class DiGraphDrawer {
 
         vToGraph.entrySet().stream().forEach(e -> {
             e.getKey().getVertices(Direction.OUT).forEach(vertex -> {
-                graph.insertEdge(graph.getDefaultParent(), null, null, e.getValue(), vToGraph.get(vertex));
+                drawEdge(graph, vToLayer.get(e.getKey()), vToLayer.get(vertex), vToGraph.get(e.getKey()), vToGraph.get(vertex));
             });
         });
+    }
+
+    private void drawEdge(mxGraph graph, int inLayer, int outLayer, Object inV, Object outV) {
+        if (Math.abs(inLayer - outLayer) == 1) {
+            graph.insertEdge(graph.getDefaultParent(), null, null, inV, outV);
+        }
+        if (inLayer - outLayer > 1) {
+            layerToPosXOffset.putIfAbsent(inLayer - 1, offsetByX);
+            int offset = layerToPosXOffset.computeIfPresent(inLayer - 1, (k, v) -> v + 1);
+            Object dummy = insertAndGetDummyVertexToGraph(graph, inLayer - 1, offset);
+            graph.insertEdge(graph.getDefaultParent(), null, null, inV, dummy);
+            drawEdge(graph, inLayer - 1, outLayer, dummy, outV);
+        }
+        if (inLayer - outLayer < -1) {
+            layerToNegXOffset.putIfAbsent(inLayer + 1, 0);
+            int offset = layerToNegXOffset.computeIfPresent(inLayer + 1, (k, v) -> v - 1);
+            Object dummy = insertAndGetDummyVertexToGraph(graph, inLayer + 1, offset);
+            graph.insertEdge(graph.getDefaultParent(), null, null, inV, dummy);
+            drawEdge(graph, inLayer + 1, outLayer, dummy, outV);
+        }
     }
 
     private boolean hasEdgesInCurrentLayer(Vertex vWithMaxNeighbourInU, Map<Vertex, Integer> vToLayer, int layer) {
