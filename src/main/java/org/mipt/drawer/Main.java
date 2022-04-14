@@ -12,7 +12,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         InputStream is = GraphMLParser.class.getClassLoader().getResourceAsStream("digraph.xml");
-        int w = 0;
+        int w = 2;
         if (args.length > 0) {
             try {
                 is = new FileInputStream(args[0]);

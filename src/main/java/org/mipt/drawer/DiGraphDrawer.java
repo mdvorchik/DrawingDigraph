@@ -12,8 +12,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class DiGraphDrawer {
@@ -70,7 +71,7 @@ public class DiGraphDrawer {
         Map<Vertex, Integer> vToLabel = new HashMap<>();
         Map<Vertex, Integer> vToLayer = new HashMap<>();
         Map<Vertex, Object> vToGraph = new HashMap<>();
-        vToLabel.put(vertexes.get(0), ++label);
+        vToLabel.put(vertexes.get((int)(Math.random() * vertexes.size())), ++label);
 
         for (int i = 1; i < vertexes.size(); i++) {
             Vertex unlabeledV = getUnlabeledV(vertexes, vToLabel);
@@ -94,7 +95,7 @@ public class DiGraphDrawer {
             int finalLayer = layer;
             long vInCurrentLayerCount = vToLayer.entrySet().stream()
                     .filter(e -> e.getValue() == finalLayer).count();
-            if (vInCurrentLayerCount >= w) {
+            if (vInCurrentLayerCount >= w || hasEdgesInCurrentLayer(vWithMaxNeighbourInU, vToLayer, layer)) {
                 layer++;
                 offsetByX = 0;
             }
@@ -104,8 +105,24 @@ public class DiGraphDrawer {
         }
 
         vToGraph.entrySet().stream().forEach(e -> {
-            //todo draw edges
+            e.getKey().getVertices(Direction.OUT).forEach(vertex -> {
+                graph.insertEdge(graph.getDefaultParent(), null, null, e.getValue(), vToGraph.get(vertex));
+            });
         });
+    }
+
+    private boolean hasEdgesInCurrentLayer(Vertex vWithMaxNeighbourInU, Map<Vertex, Integer> vToLayer, int layer) {
+        AtomicBoolean hasEdgesInCurrentLayer = new AtomicBoolean(false);
+        List<Vertex> vertices = Util.listFromIterable(vWithMaxNeighbourInU.getVertices(Direction.BOTH));
+        vToLayer.entrySet().stream()
+                .filter(e -> e.getValue() == layer)
+                .map(Map.Entry::getKey)
+                .forEach(v -> {
+                    if (vertices.contains(v)) {
+                        hasEdgesInCurrentLayer.set(true);
+                    }
+                });
+        return hasEdgesInCurrentLayer.get();
     }
 
     private Vertex getVWithMaxNeighbourInU(List<Vertex> vertexes, List<Vertex> u, Map<Vertex, Integer> vToLabel) {
