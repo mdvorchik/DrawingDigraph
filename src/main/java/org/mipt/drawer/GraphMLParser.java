@@ -8,6 +8,7 @@ import com.tinkerpop.blueprints.util.io.graphml.GraphMLReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class GraphMLParser {
     private final Graph graph;
@@ -32,5 +33,9 @@ public class GraphMLParser {
         }
 
         return null;
+    }
+
+    public List<Vertex> getVertexes() {
+         return Util.listFromIterable(graph.getVertices());
     }
 }

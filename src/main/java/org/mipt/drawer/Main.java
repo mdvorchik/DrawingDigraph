@@ -7,10 +7,12 @@ import java.awt.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
         InputStream is = GraphMLParser.class.getClassLoader().getResourceAsStream("digraph.xml");
+        int w = 0;
         if (args.length > 0) {
             try {
                 is = new FileInputStream(args[0]);
@@ -18,11 +20,14 @@ public class Main {
                 e.printStackTrace();
             }
         }
+        if (args.length > 1) {
+            w = Integer.parseInt(args[1]);
+        }
         GraphMLParser graphMLParser = new GraphMLParser(is);
-        Vertex rootVertex = graphMLParser.getRootVertex();
-        BinaryTreeDrawer binaryTreeDrawer = new BinaryTreeDrawer(rootVertex);
+        List<Vertex> vertexes = graphMLParser.getVertexes();
+        DiGraphDrawer graphDrawer = new DiGraphDrawer(vertexes);
 
-        binaryTreeDrawer.drawTreeToFile("tree.png");
+        graphDrawer.drawGraphToFile("tree.png", w);
         String s = args.length > 0 ? args[0] : "";
         System.out.println("Done! " + s);
 
@@ -35,8 +40,8 @@ public class Main {
             ImageIcon icon = new ImageIcon("tree.png");
             JOptionPane.showMessageDialog(
                     null,
-                    "Tree",
-                    "Tree", JOptionPane.INFORMATION_MESSAGE,
+                    "Graph",
+                    "graph", JOptionPane.INFORMATION_MESSAGE,
                     icon);
         });
     }
