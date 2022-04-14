@@ -10,7 +10,7 @@ import java.io.InputStream;
 
 public class Main {
     public static void main(String[] args) {
-        InputStream is = GraphMLParser.class.getClassLoader().getResourceAsStream("full_binary_5.xml");
+        InputStream is = GraphMLParser.class.getClassLoader().getResourceAsStream("digraph.xml");
         if (args.length > 0) {
             try {
                 is = new FileInputStream(args[0]);
